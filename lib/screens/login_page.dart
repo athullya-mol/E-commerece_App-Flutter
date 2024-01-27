@@ -1,9 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
+import 'dart:developer';
 import 'package:ecommerce_app/constants/const.dart';
 import 'package:ecommerce_app/screens/home_page.dart';
 import 'package:ecommerce_app/screens/signup_page.dart';
+import 'package:ecommerce_app/services/api_handlers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -16,91 +18,83 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+String? username, password;
+  final  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+ 
 
-  final _formkey = GlobalKey<FormState>();
-  final TextEditingController _usernameContoller = TextEditingController();
-  final TextEditingController _passwordContoller = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
 
-@override
-  void dispose() {
-    _usernameContoller.dispose();
-    _passwordContoller.dispose();
-    super.dispose();
+ 
+  @override
+  void initState() {
+    super.initState();
+    _loadCounter();
   }
-Future<void> login(String username, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://bootcamp.cyralearnings.com/login.php'),
-        body: {
-          'username': username,
-          'password': password,
-        },
-      );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data['msg'] == 'success') {
-          saveLoginStatus();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Logged in successfully as $username'),
-            ),
-          );
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Username or Password is incorrect'),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to login. Please try again.'),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to login. Please try again.'),
-        ),
-      );
+void _loadCounter() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    log("isloggedin = $isLoggedIn");
+    if (isLoggedIn) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const HomePage()));
     }
   }
+login(String username, String password) async {
+    try {
+      print('webservice');
+      print(username);
+      print(password);
+      var result;
+      final Map<String, dynamic> loginData = {
+        'username': username,
+        'password': password,
+      };
 
+      final response = await http.post(
+        Uri.parse("${webservice.mainurl}login.php"),
+        body: loginData,
+      );
 
-/*......................Displaying on console...................... */
-void checkAutoLogin() async{
-  final prefs = await SharedPreferences.getInstance();
-  final loggedIn = prefs.getBool('loggedIn')?? false;
-  // var logger = Logger();
-  // logger.i("Logged in value:$loggedIn");
-  if(loggedIn){
-    //Auto login is possible,navigate to home page
-    Navigator.pushReplacement(
-      context,
-    MaterialPageRoute(builder: (context) => const HomePage()),
-    );
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        if (response.body.contains("success")) {
+          log("login successfully completed");
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setBool("isLoggedIn", true);
+          prefs.setString("username", username);
+          Navigator.push(context, MaterialPageRoute(
+            builder: (context) {
+              return const HomePage();
+            },
+          ));
+        } else {
+          log("login failed");
+          result = {log(json.decode(response.body)['error'].toString())};
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            padding: EdgeInsets.all(15.0),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10))),
+            content: Text( "Invalid username or password!",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                )),
+          ));
+        }
+      }
+      else {
+        result = {log(jsonDecode(response.body)['error'].toString())};
+      }
+      return result;
+    } catch (e) {
+      log(e.toString());
+    }
   }
-}
-
-
-void saveLoginStatus() async{
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool('loggedIn', true);
-}
-
-@override
-  void initState(){
-  super.initState();
-  checkAutoLogin();
-}
 
 
   @override
@@ -112,7 +106,7 @@ void saveLoginStatus() async{
             child: Padding(
               padding: const EdgeInsets.only(top: 200, left: 15, right: 15),
               child: Form(
-                key: _formkey,
+                key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -133,17 +127,24 @@ void saveLoginStatus() async{
                       height: 80,
                     ),
                     TextFormField(
+                      cursorColor: primaryColor,
+                      controller: usernameController,
                       validator: (value) {
                         if(value!.isEmpty){
                           return 'Please enter your Username';
                         }
                         return null;
                       },
-                      controller: _usernameContoller,
+                      onChanged: (value){
+                        setState(() {
+                          username = value;
+                        });
+                      } ,
                       style: const TextStyle(
                         fontSize: 21
                       ),
                       decoration: InputDecoration(
+
                         fillColor: Colors.grey.shade200,
                         filled: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 15,vertical: 18),
@@ -153,6 +154,7 @@ void saveLoginStatus() async{
                           ),
                           borderSide: BorderSide.none,
                         ),
+                        
                         labelText: 'Username',
                         labelStyle: const TextStyle(
                           fontSize: 20,
@@ -164,6 +166,7 @@ void saveLoginStatus() async{
                       height: 20,
                     ),
                     TextFormField(
+                      controller: passwordController,
                       obscureText: true,
                       validator: (value) {
                         if(value!.isEmpty){
@@ -171,7 +174,11 @@ void saveLoginStatus() async{
                         }
                         return null;
                       },
-                      controller: _passwordContoller,
+                     onChanged: (value) {
+                       setState(() {
+                         password=value;
+                       });
+                     },
                       style: const TextStyle(
                         fontSize: 21
                       ),
@@ -197,13 +204,14 @@ void saveLoginStatus() async{
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        String username = _usernameContoller.text;
-                        String password = _passwordContoller.text;
-                        if(_formkey.currentState!.validate()){
-                          print(username);
-                          print(password);
-                          login(username, password);
-                        }
+                       if (_formKey.currentState!.validate()) {
+                        username = usernameController.text;
+                        password = passwordController.text;
+
+                        log("username = $username");
+                        log("password = $password");
+                        login(username.toString(), password.toString());
+                      }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -232,13 +240,13 @@ void saveLoginStatus() async{
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUp(),));
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpPage()));
                         },
-                        child: Text('Go to Register',
+                        child: const Text('Go to Register',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.indigo.shade900
+                          color: primaryColor,
                         ),
                         ),
                         

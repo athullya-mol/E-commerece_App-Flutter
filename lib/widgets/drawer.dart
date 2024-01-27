@@ -3,8 +3,12 @@ import 'package:ecommerce_app/screens/cartitems_page.dart';
 import 'package:ecommerce_app/screens/home_page.dart';
 import 'package:ecommerce_app/screens/login_page.dart';
 import 'package:ecommerce_app/screens/order_page.dart';
+import 'package:ecommerce_app/services/provider/cart_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:badges/badges.dart' as badges;
 class DrawerScreen extends StatefulWidget {
   const DrawerScreen({super.key});
 
@@ -60,10 +64,21 @@ class _DrawerScreenState extends State<DrawerScreen> {
             height: 20,
           ),
           ListTile(
-            leading: const Icon(
+            leading: badges.Badge(
+              showBadge: context.read<Cart>().getItems.isEmpty ? false : true,
+              badgeStyle: const badges.BadgeStyle(badgeColor: Colors.red),
+              badgeContent: Text(
+                context.watch<Cart>().getItems.length.toString(),
+                style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white),
+              ),
+             child: Icon(
               Icons.shopping_cart,
               color: primaryColor,
               size: 30,
+            ),
             ),
             title: const Text(
               'Cart Page',
@@ -77,7 +92,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const CartItemScreen(),
+                      builder: (context) => CartPage(),
                     ));
               },
               icon: const Icon(
@@ -107,7 +122,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const OrderDetailsPage(),
+                      builder: (context) => const OrderdetailsPage()
                     ));
               },
               icon: const Icon(
@@ -133,8 +148,14 @@ class _DrawerScreenState extends State<DrawerScreen> {
               ),
             ),
             trailing: IconButton(
-              onPressed: () {
-                _logout(context);
+              onPressed: 
+               () async {
+                final prefs = await SharedPreferences.getInstance();
+                prefs.setBool("isLoggedIn", false);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
               },
               icon: const Icon(
                 Icons.arrow_forward_ios,
@@ -145,21 +166,4 @@ class _DrawerScreenState extends State<DrawerScreen> {
         ]),
       );
   }
-}
-
-void _logout(BuildContext context) async {
-  final currentContext = context;
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool('loggedIn', false);
-  Future.delayed(
-    Duration.zero,
-    () {
-      Navigator.pushReplacement(
-          currentContext,
-          MaterialPageRoute(
-            builder: (context) => const LoginPage()
-          )
-      );
-    },
-  );
 }

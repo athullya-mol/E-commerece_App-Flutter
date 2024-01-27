@@ -4,57 +4,52 @@ import 'package:ecommerce_app/constants/const.dart';
 import 'package:ecommerce_app/screens/category_screen.dart';
 import 'package:ecommerce_app/screens/product_details.dart';
 import 'package:ecommerce_app/services/api_handlers.dart';
-import 'package:ecommerce_app/widgets/bottom_bar.dart';
 import 'package:ecommerce_app/widgets/drawer.dart';
+// ignore: unused_import
+import 'package:ecommerce_app/widgets/bottombar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // ignore: must_be_immutable
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-//for logout
-  void logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('loggedIn', false);
-  }
-
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:Colors.grey.shade200,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        elevation: 0,
         centerTitle: true,
+        backgroundColor: primaryColor,
         title: const Text(
-          'E-COMMERCE',
+          "E-COMMERCE",
           style: TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.w500,
-          ),
+            color: Colors.white, 
+            fontWeight: FontWeight.bold),
         ),
       ),
-      backgroundColor: Colors.grey.shade100,
       drawer: const DrawerScreen(),
       body: Padding(
-          padding: const EdgeInsets.all(25),
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Category',
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w600,
-                    color: primaryColor,
-                  ),
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                 FutureBuilder(
-                future: ApiHandler().getCategories(),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(
+              height: 10,
+            ),
+            const Text(
+              "Category",
+              style: TextStyle(
+                  fontSize: 30,
+                  color: primaryColor,
+                  fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            FutureBuilder(
+                future: webservice().fetchCategory(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     log("length ==${snapshot.data!.length}");
@@ -74,7 +69,7 @@ class HomePage extends StatelessWidget {
                                 log("clicked");
 
                                 Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) {
+                                  builder: (BuildContext context) {
                                     return ProductScreen(
                                       //  catid: ,catname: ,
                                       catid: snapshot.data![index].id!,
@@ -95,7 +90,7 @@ class HomePage extends StatelessWidget {
                                     // "Cateogry name",
                                     style: const TextStyle(
                                         color: primaryColor,
-                                        fontSize: 15,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -115,7 +110,9 @@ class HomePage extends StatelessWidget {
             const Text(
               "Offer Products",
               style: TextStyle(
-                  fontSize: 18, color: primaryColor, fontWeight: FontWeight.bold),
+                  fontSize: 22,
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(
               height: 10,
@@ -124,7 +121,7 @@ class HomePage extends StatelessWidget {
             //view products
             Expanded(
               child: FutureBuilder(
-                  future: ApiHandler().getOfferProducts(),
+                  future: webservice().fetchProducts(),
                   builder: (context, snapshot) {
                     //  log("product length ==" + snapshot.data!.length.toString());
                     if (snapshot.hasData) {
@@ -142,10 +139,10 @@ class HomePage extends StatelessWidget {
                                 log("clicked");
                                 Navigator.push(context, MaterialPageRoute(
                                   builder: (context) {
-                                    return ProductDetailsScreen(
+                                    return detailsPage(
                                         id: product.id!,
-                                        name: product.name!,
-                                        image:ApiHandler().imageurl +
+                                        name: product.productName!,
+                                        image: webservice().imageurl +
                                             product.image!,
                                         price: product.price.toString(),
                                         description: product.description!);
@@ -157,8 +154,7 @@ class HomePage extends StatelessWidget {
                                 child: Container(
                                   decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius:
-                                          BorderRadius.circular(15)),
+                                      borderRadius: BorderRadius.circular(15)),
                                   child: Column(
                                     children: [
                                       ClipRRect(
@@ -170,11 +166,8 @@ class HomePage extends StatelessWidget {
                                               minHeight: 100, maxHeight: 250),
                                           child: Image(
                                               image: NetworkImage(
-                                            ApiHandler().imageurl +
+                                            webservice().imageurl +
                                                 product.image!,
-                                            // "a"+"b"="ab";
-                                            // "https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg",
-                                            // "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGUU3VWK2nTbvZRiUCORkJJ80S4JrCoCqoYQ&usqp=CAU",
                                           )),
                                         ),
                                       ),
@@ -185,14 +178,11 @@ class HomePage extends StatelessWidget {
                                             Align(
                                               alignment: Alignment.centerLeft,
                                               child: Text(
-                                                product.name!,
-                                                //  "Shoes ssssssssssssssssssssssssssssssss",
+                                              product.productName ?? 'Unknown Product',
                                                 maxLines: 2,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                    color:
-                                                        Colors.grey.shade600,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color: primaryColor,
                                                     fontSize: 16,
                                                     fontWeight:
                                                         FontWeight.w600),
@@ -204,8 +194,7 @@ class HomePage extends StatelessWidget {
                                                 'Rs. ${product.price}',
                                                 //  "2000",
                                                 style: TextStyle(
-                                                    color:
-                                                        Colors.red.shade900,
+                                                    color: Colors.red.shade900,
                                                     fontSize: 17,
                                                     fontWeight:
                                                         FontWeight.w600),
@@ -227,7 +216,11 @@ class HomePage extends StatelessWidget {
                     }
                   }),
             ),
-              ])),
+
+            //closing
+          ],
+        ),
+      ),
       bottomNavigationBar: bottomBar(context),
     );
   }

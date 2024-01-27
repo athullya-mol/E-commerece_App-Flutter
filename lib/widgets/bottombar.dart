@@ -5,17 +5,15 @@ import 'package:flutter/material.dart';
 int currentIndex = 0;
 
 Future<void> navigateToPage(BuildContext context, int index) async {
-  // if (index == 0) {
-  //   Navigator.push(
-  //       // context, MaterialPageRoute(builder: (context) => const MenShopping()));
-  // }
-  if (index == 1) {
+  if (index == 0) {
+    Navigator.pop(context);
+  }
+  else if (index == 1) {
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => const HomePage()));
   }
-  if (index == 2) {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => const HomePage()));
+  else if (index == 2) {
+   Navigator.pop(context);
   } else {
     currentIndex = index;
   }
@@ -34,7 +32,7 @@ BottomNavigationBar bottomBar(BuildContext context) {
     items: const <BottomNavigationBarItem>[
       BottomNavigationBarItem(
         icon: Icon(
-          Icons.arrow_forward_ios,
+          Icons.square,
         ),
         label: '',
       ),

@@ -1,150 +1,246 @@
+import 'dart:developer';
 import 'package:ecommerce_app/constants/const.dart';
-import 'package:ecommerce_app/models/ordered_items.dart';
+import 'package:ecommerce_app/models/orderdetails_model.dart';
+import 'package:ecommerce_app/services/api_handlers.dart';
+import 'package:ecommerce_app/widgets/bottombar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-class OrderDetailsPage extends StatelessWidget {
-  const OrderDetailsPage({super.key});
+class OrderdetailsPage extends StatefulWidget {
+  const OrderdetailsPage({super.key});
+
+  @override
+  State<OrderdetailsPage> createState() => _MyWidgetState();
+}
+
+class _MyWidgetState extends State<OrderdetailsPage> {
+  String? username;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsername();
+  }
+
+  void _loadUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      username = prefs.getString('username');
+    });
+    print("Username: $username");
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade100,
         elevation: 0,
+        backgroundColor: Colors.grey.shade100,
         leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: primaryColor,
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back_ios),
-          color: primaryColor,
         ),
         title: const Text(
-          'Order Details',
+          "Order Details ",
           style: TextStyle(
-              fontSize: 26,
-              color: primaryColor,
-              fontWeight: FontWeight.w800),
+            fontSize: 25,
+            color: primaryColor,
+          ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: ordersData.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    color: Colors.grey.shade200,
-                    margin: const EdgeInsets.symmetric(vertical: 15),
+      body: FutureBuilder<List<OrderModel>?>(
+        future: webservice().fetchOrderDetails(username.toString()),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              shrinkWrap: true,
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                final orderDetails = snapshot.data![index];
+                return Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Card(
+                    elevation: 0,
+                    color: const Color.fromARGB(15, 74, 20, 140),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25)),
-                    elevation: 3,
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
                     child: ExpansionTile(
-                      backgroundColor: Colors.grey.shade200,
-                      title: ListTile(
-                        title: Text(
-                          formatDate(
-                            ordersData[index].date,
-                          ),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        isThreeLine: true,
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              ordersData[index].paymentMode!,
-                              style: TextStyle(
-                                color: Colors.green.shade700,
-                                fontSize:  16,
-                              ),
+                      trailing: const Icon(Icons.arrow_drop_down),
+                      textColor: Colors.black,
+                      collapsedTextColor: Colors.black,
+                      iconColor: Colors.red,
+                      title: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            DateFormat.yMMMEd().format(orderDetails.date),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Total Price: Rs.${calculateTotalPrice(ordersData[index].items)}',
-                              style: TextStyle(
-                                color: Colors.red.shade700,
-                                fontSize:  16,
-                                fontWeight: FontWeight.w500
-                              ),
+                          ),
+                          Text(
+                            orderDetails.paymentmethod.toString(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.green.shade900,
+                              fontWeight: FontWeight.w400,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            "${orderDetails.totalamount} /-",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.red.shade900,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                       children: [
-                        Column(
-                          
-                          children: ordersData[index]
-                              .items
-                              .map(
-                                (item) => Container(
-                                  height: 100,
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 10, horizontal: 15),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      color: Colors.white),
-                                  child: ListTile(
-                                    leading: Image.asset(
-                                      item.image,
-                                      height: 100,
+                        ListView.separated(
+                          itemCount: orderDetails.products.length,
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(top: 25),
+                          physics: const NeverScrollableScrollPhysics(),
+                          separatorBuilder: (BuildContext context, int index) {
+                            return const SizedBox(
+                              height: 10,
+                            );
+                          },
+                          itemBuilder: (BuildContext context, int index) {
+                            return Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              child: SizedBox(
+                                height: 100,
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 80,
                                       width: 100,
-                                      fit: BoxFit.contain,
-                                      
-                                    ),
-                                    title: Text(item.itemName,
-                                    style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize:  18,
-                              ),
-                                    ),
-                                    subtitle: Text('Price: Rs.${item.price}',
-                                    style: TextStyle(
-                                color: Colors.red.shade700,
-                                fontSize:  16,
-                                fontWeight: FontWeight.w500
-                              ),
-                                    
-                                    ),
-                                    trailing: TextButton(
-                                      onPressed: () {},
-                                      child: Text(
-                                        '1x',
-                                        style: TextStyle(
-                                            color: Colors.green.shade800,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 2),
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 9),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                              Radius.circular(20),
+                                            ),
+                                            image: DecorationImage(
+                                              image: NetworkImage(
+                                                webservice().imageurl +
+                                                    orderDetails
+                                                        .products[index].image,
+                                              ),
+                                              fit: BoxFit.fill,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(6.0),
+                                        child: Wrap(
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                orderDetails
+                                                    .products[index]
+                                                    .productname,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: primaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 8, right: 8),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    orderDetails
+                                                        .products[index].price
+                                                        .toString(),
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          Colors.red.shade900,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "${orderDetails.products[index].quantity} X",
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          Colors.green.shade900,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              )
-                              .toList(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+                  ),
+                );
+              },
+            );
+          } else {
+            return const Center(
+              child: Text('No orders found'),
+            ); // Empty container when no data is available
+          }
+        },
       ),
+      bottomNavigationBar: bottomBar(context),
     );
-  }
-
-  String formatDate(DateTime date) {
-    return DateFormat('E, MMM d, y').format(date); // Format the DateTime object
-  }
-
-  double calculateTotalPrice(List<OrderedItem> items) {
-    return items.fold(0, (sum, item) => sum + item.price);
   }
 }

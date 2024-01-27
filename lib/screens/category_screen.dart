@@ -1,8 +1,9 @@
 import 'dart:developer';
 
+import 'package:ecommerce_app/constants/const.dart';
 import 'package:ecommerce_app/screens/product_details.dart';
 import 'package:ecommerce_app/services/api_handlers.dart';
-import 'package:ecommerce_app/widgets/bottom_bar.dart';
+import 'package:ecommerce_app/widgets/bottombar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -22,14 +23,14 @@ class _ProductScreenState extends State<ProductScreen> {
     log("catname = ${widget.catname}");
     log("catid = ${widget.catid}");
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: Colors.grey.shade200,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
-            color: Colors.black,
+            color: primaryColor,
           ),
           onPressed: () {
             Navigator.pop(context);
@@ -39,13 +40,14 @@ class _ProductScreenState extends State<ProductScreen> {
           widget.catname,
           // "Category name",
           style: const TextStyle(
-            fontSize: 20,
-            color: Colors.black,
+            fontSize: 23,
+            color: primaryColor,
+            fontWeight: FontWeight.w700
           ),
         ),
       ),
       body: FutureBuilder(
-          future: ApiHandler().getCategoryProducts(widget.catid),
+          future: webservice().fetchCatProducts(widget.catid),
           builder: (context, snapshot) {
             // log("length ==" + snapshot.data!.length.toString());
             if (snapshot.hasData) {
@@ -61,10 +63,10 @@ class _ProductScreenState extends State<ProductScreen> {
                         log("clicked");
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) {
-                            return ProductDetailsScreen(
+                            return detailsPage(
                               id: product.id!,
-                              name: product.name!,
-                              image: ApiHandler().imageurl + product.image!,
+                              name: product.productName!,
+                              image: webservice().imageurl + product.image!,
                               price: product.price.toString(),
                               description: product.description!,
                             );
@@ -88,7 +90,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                       minHeight: 100, maxHeight: 250),
                                   child: Image(
                                       image: NetworkImage(
-                                    ApiHandler().imageurl + product.image!,
+                                    webservice().imageurl + product.image!,
                                   )
                                       //  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQGUU3VWK2nTbvZRiUCORkJJ80S4JrCoCqoYQ&usqp=CAU"),
                                       ),
@@ -101,7 +103,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                     Align(
                                       alignment: Alignment.topLeft,
                                       child: Text(
-                                        product.name!,
+                                        product.productName!,
 
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,

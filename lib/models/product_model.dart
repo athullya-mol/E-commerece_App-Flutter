@@ -1,26 +1,27 @@
+// ignore_for_file: file_names
+
 class ProductModel {
   int? id;
   int? catid;
-  String? name;
   double? price;
-  String? image;
+  String? productName;
   String? description;
+  String? image;
 
   ProductModel({
     this.id,
-    required this.catid,
-     required this.name,
+    this.catid,
     this.price,
-    this.image,
+    this.productName,
     this.description,
+    this.image,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) => ProductModel(
-        id: json["id"],
-        catid: json["catid"],
-        name: json["productname"],
-        price: json["price"]?.toDouble(),
-        image: json["image"],
-        description: json["description"],
-      );
+      id: json['id'],
+      catid: json['catid'],
+      price: json['price']?.toDouble(),
+      productName: json['productname'],
+      description: json['description'],
+      image: json['image']);
 }

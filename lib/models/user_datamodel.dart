@@ -1,5 +1,5 @@
 class UserDataModel {
-  String? name;
+   String? name;
   String? phone;
   String? address;
 
@@ -10,8 +10,5 @@ class UserDataModel {
   });
 
   factory UserDataModel.fromJson(Map<String, dynamic> json) => UserDataModel(
-        name: json["name"],
-        phone: json["phone"],
-        address: json["address"],
-      );
+      name: json['name'], phone: json['phone'], address: json['address']);
 }

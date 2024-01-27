@@ -16,13 +16,13 @@ class OrderModel {
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
-        id: json["id"],
-        username: json["username"],
-        totalamount: json["totalamount"]?.toDouble(),
+        id: json['id'],
+        username: json['username'],
+        totalamount: json['totalamount']?.toDouble(),
         paymentmethod: json["paymentmethod"],
-        date: DateTime.parse(json["date"]),
+        date: DateTime.parse(json['date']),
         products: List<Product>.from(
-            json["products"].map((x) => Product.fromJson(x))),
+            json['products'].map((x) => Product.fromJson(x))),
       );
 
   Map<String, dynamic> toJson() => {
@@ -41,12 +41,11 @@ class Product {
   String image;
   int quantity;
 
-  Product({
-    required this.productname,
-    required this.price,
-    required this.image,
-    required this.quantity,
-  });
+  Product(
+      {required this.productname,
+      required this.price,
+      required this.image,
+      required this.quantity});
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
         productname: json["productname"],
